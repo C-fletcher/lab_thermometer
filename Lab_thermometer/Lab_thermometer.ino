@@ -28,8 +28,8 @@ char keys[ROWS][COLS] = {
     {'.','0','#'}
 };
 
-byte rowPins[ROWS] = {2, 3, 4, 5}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {6, 7, 8}; //connect to the column pinouts of the keypad
+byte rowPins[ROWS] = {8, 7, 6, 5}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {4, 3, 2}; //connect to the column pinouts of the keypad
 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
@@ -37,8 +37,8 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 void menu();
 void exitMenu();
 void set_temp_menu();
-void set_ramp_menu();
-void set_profile_menu();
+void set_contro_menu();
+void set_PID_menu();
 void reset_min_max();
 
 void setup()
@@ -59,6 +59,8 @@ void setup()
 
   delay(1000);
     lcd.clear();
+
+  pinMode(9, OUTPUT);
 }
 
 double internal;
@@ -74,6 +76,8 @@ bool Is_second_menu = false;
 char set_temp_string[5] = {'0','0','.','0','0'};
 char ramp_speed_string = '9';
 char profile_type = '1';
+
+bool is_pid = false;
 
 void loop()
 {
@@ -114,6 +118,22 @@ void loop()
     lcd.print(max_temp);
 
   }
+
+  if (is_pid)
+  {
+    //do pid stuff
+  }
+  else
+  {
+    if (probe < (set_temp))
+    {
+      digitalWrite(9, HIGH);
+    }
+    else
+    {
+      digitalWrite(9, LOW);
+    }
+  }
   
 }
 
@@ -145,12 +165,15 @@ void menu() {
 
   while (Is_menu)
   {
+    //turn off heater
+    digitalWrite(9, LOW);
+    
     lcd.setCursor(0,0);
     lcd.print("1. Enter Set Temp");
     lcd.setCursor(0,1);
-    lcd.print("2. Enter Ramp Speed");
+    lcd.print("2. Control Type");
     lcd.setCursor(0,2);
-    lcd.print("3. Set Temp Profile");
+    lcd.print("3. Set PID");
     char key = keypad.getKey();
     if (key)
     {
@@ -159,15 +182,17 @@ void menu() {
         set_temp_menu();
         break;
       case '2':
-        set_ramp_menu();
+        set_control_menu();
         break;
       case '3':
-        //set_profile_menu();
+        //set_PID_menu();
         break;
       }
     }
   }
 }
+
+
 void exitMenu()
 {
   if (Is_second_menu)
@@ -183,12 +208,17 @@ void exitMenu()
     lcd.print(set_temp_string);
     set_temp = atof(set_temp_string);
     lcd.setCursor(0,1);
-    lcd.print("Ramp Speed (0-9):  ");
-    lcd.print(ramp_speed_string);
-    ramp_speed = atof(ramp_speed_string)/9.0;
+    
     lcd.setCursor(0,2);
-    lcd.print("Temp Profile:      ");
-    lcd.print(profile_type);
+    lcd.print("control: ");
+    if (is_pid)
+    {
+      lcd.print("PID");
+    }
+    else
+    {
+      lcd.print("ON/OFF");
+    }
     delay(2000);
     lcd.clear();
   }
@@ -230,14 +260,14 @@ void set_temp_menu() {
   lcd.clear();
 }
 
-void set_ramp_menu() {
+void set_control_menu() {
   int n = 0;
   Is_second_menu = true;
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("Enter Ramp Speed:");
+  lcd.print("1. On/Off");
   lcd.setCursor(0,1);
-  lcd.print(" 0 (off) to 9 (max)");
+  lcd.print("2. PID");
     
   while (Is_second_menu)
   {
@@ -246,13 +276,19 @@ void set_ramp_menu() {
     {
       if (key != '#')
       {
-        ramp_speed_string = key;
-        n++;
+        switch(key) {
+        case '1':
+          is_pid = false;
+          break;
+          case '2':
+          is_pid = true;
+          break;
+        }
         lcd.setCursor(2,2);
         lcd.print(key);
       }
     }
-  }
+  } 
   lcd.clear();
 }
 
@@ -287,6 +323,8 @@ void set_profile_menu() {
   }
   lcd.clear();
 }
-  
+
+
+
 
 
